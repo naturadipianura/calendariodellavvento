@@ -1,4 +1,6 @@
-# Apertura sul sito; la stessa scelta va impostata in Supabase (calendar_settings).
+# Apertura progressiva; mantenere gli stessi valori su Supabase (calendar_settings).
 year: 2026
-preview: true
+# Novembre per la prova. Per il calendario definitivo cambiare month in 12.
+month: 11
+preview: false
 # I punteggi sono definiti nelle prove di advent_days.json e verificati dal database.

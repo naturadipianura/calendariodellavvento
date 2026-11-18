@@ -191,3 +191,15 @@ h1 { font-size: clamp(24px, 3.5vw, 45px); font-weight: 500; line-height: 1.12; m
     text-align: center;
   }
 }
+/* Apertura progressiva delle foglie. */
+.map-day.is-locked .map-day__leaf,.calendar-card.is-locked .calendar-card__image{filter:grayscale(.9);opacity:.4}
+.map-day.is-locked .map-day__number,.calendar-card.is-locked .calendar-card__day{color:#40543f;text-shadow:0 1px 2px #fff}
+[data-map-find][aria-disabled="true"]{opacity:.55}
+.map-day[aria-disabled="true"],.calendar-card [aria-disabled="true"]{cursor:default}
+[data-map-day-link][hidden]{display:none!important}
+
+/* Spunta personale: le giornate future restano chiuse anche se giocate in anteprima. */
+.calendar-played-badge{position:absolute;right:4%;bottom:8%;display:grid;place-items:center;width:clamp(18px,2.4vw,32px);height:clamp(18px,2.4vw,32px);border-radius:50%;background:#315c39;color:#fff;border:2px solid #fffdf4;font:700 clamp(12px,1.6vw,22px)/1 sans-serif;box-shadow:0 1px 3px #1f3d3040;z-index:2;pointer-events:none}
+.calendar-played-badge[hidden]{display:none!important}.calendar-card>a{position:relative}.calendar-status-legend{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 20px;margin:12px auto;color:#405c3b;font-size:14px}.calendar-status-legend>span{display:inline-flex;align-items:center;gap:6px}.calendar-status-key{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;font:700 13px/1 sans-serif}.calendar-status-key--available{background:#b9cf86;border:1px solid #67824c}.calendar-status-key--played{background:#315c39;color:#fff}.calendar-status-key--locked{background:#d9ded2;border:1px solid #a6aea0}.calendar-progress-note{text-align:center;color:#5e7552;font-size:14px;margin:8px auto}.calendar-progress-note:empty{display:none}.map-calendar__progress{display:block;margin:4px 0 8px;font-size:13px;color:#405c3b}.map-calendar__progress[hidden]{display:none!important}
+
+.map-day .calendar-played-badge{width:34%;height:34%;min-width:10px;min-height:10px;right:-3%;bottom:0;border-width:1px;font-size:clamp(8px,1.3cqw,16px)}

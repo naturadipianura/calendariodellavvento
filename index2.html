@@ -3,11 +3,15 @@ layout: default
 title: Calendario a griglia — Natura di Pianura
 description: Ventiquattro giorni per scoprire la natura della pianura.
 ---
+{% assign calendar_months = 'gennaio,febbraio,marzo,aprile,maggio,giugno,luglio,agosto,settembre,ottobre,novembre,dicembre' | split: ',' %}
+{% assign calendar_month_index = site.data.advent.month | default: 12 | minus: 1 %}
+{% assign calendar_month = calendar_months[calendar_month_index] %}
+
 {% include explorer-link.html %}
 <section class="calendar-intro" aria-labelledby="calendar-title">
   <p class="calendar-intro__eyebrow">Natura di Pianura</p>
   <h1 id="calendar-title">Un giorno, una scoperta</h1>
-  <p>Il calendario dell’Avvento delle nostre aree naturali.<br>Dal 1° al 24 dicembre, una sorpresa al giorno.</p>
+  <p>Il calendario dell’Avvento delle nostre aree naturali.<br>Dal 1° al 24 {{ calendar_month }}, una sorpresa al giorno.</p>
 </section>
 {% assign leaf_types = 'farnia,acero,pioppo,edera,agrifoglio' | split: ',' %}
 {% assign leaf_order = '0,3,1,4,2,4,0,2,3,1,3,2,4,1,0,1,4,3,0,2,4,1,2,3' | split: ',' %}
@@ -15,8 +19,8 @@ description: Ventiquattro giorni per scoprire la natura della pianura.
   {% for day in (1..24) %}
   {% assign leaf_index = leaf_order[forloop.index0] | plus: 0 %}
   {% assign leaf = leaf_types[leaf_index] %}
-  <li class="calendar-card calendar-leaf--{{ leaf }}" aria-label="{{ day }} dicembre">
-    <a href="{{ '/giornate/' | append: day | append: '.html' | relative_url }}" aria-label="Apri la giornata del {{ day }} dicembre"><img class="calendar-card__image" src="{{ '/images/foglia-' | append: leaf | append: '.png' | relative_url }}" alt="" width="1024" height="1024" decoding="async">
+  <li class="calendar-card calendar-leaf--{{ leaf }}" data-calendar-day="{{ day }}" aria-label="{{ day }} {{ calendar_month }}">
+    <a href="{{ '/giornate/' | append: day | append: '.html' | relative_url }}" aria-label="Apri la giornata del {{ day }} {{ calendar_month }}"><img class="calendar-card__image" src="{{ '/images/foglia-' | append: leaf | append: '.png' | relative_url }}" alt="" width="1024" height="1024" decoding="async">
     <span class="calendar-card__day" aria-hidden="true">{{ day }}</span></a>
   </li>
   {% endfor %}

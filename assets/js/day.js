@@ -9,9 +9,7 @@
   const message=text=>$('[data-day-message]').textContent=text;
   function localState(submission=null,finish=false){
     const settings=catalogue.settings,profiles=read('giapp-demo-profiles-v1',[]),profile=practice?{score:practiceScore}:profiles.find(p=>p.id===read('giapp-demo-current-v1'));
-    const parts=new Intl.DateTimeFormat('en',{timeZone:'Europe/Rome',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
-    const date=Object.fromEntries(parts.map(p=>[p.type,p.value]));
-    if(!settings.preview&&`${date.year}-${date.month}-${date.day}`<`${settings.year}-12-${String(day).padStart(2,'0')}`)return{locked:true,opens_on:`${day} dicembre ${settings.year}`};
+    if(!window.GiappCalendar.isOpen(day,settings))return{locked:true,preview:false,opens_on:window.GiappCalendar.opensOn(day,settings)};
     const all=practice?{}:read('giapp-demo-games-v2',{}),key=`${profile?.id}:${settings.year}:${day}:${entry.challenge.version||'prototype-v1'}`;
     let progress=practice?practiceProgress:all[key]||null;
     if(submission && profile){const next=core.reduce(progress,core.evaluate(entry.challenge,submission),profile.score||0);progress=next.progress;profile.score=next.total;}
@@ -22,6 +20,7 @@
       area:progress?.closed?{name:entry.name,description:entry.area_description,image:entry.area_image,url:entry.area_url}:null};
   }
   async function cloud(submission=null,finish=false){
+    if(!window.GiappCalendar.isOpen(day,catalogue.settings))return{locked:true,preview:false,opens_on:window.GiappCalendar.opensOn(day,catalogue.settings)};
     const key=`giapp-auth:${config.url}`;let session=read(key);
     if(session&&session.expires_at*1000<Date.now()+60000){const response=await fetch(`${config.url}/auth/v1/token?grant_type=refresh_token`,{method:'POST',headers:{apikey:config.key,'Content-Type':'application/json'},body:JSON.stringify({refresh_token:session.refresh_token})});if(!response.ok)throw new Error('Accedi di nuovo dal tuo account.');session=await response.json();session.expires_at||=Math.floor(Date.now()/1000)+(session.expires_in||3600);save(key,session);}
     const body={p_day:day,p_finish:finish};
@@ -34,7 +33,7 @@
   function mountGame(){ui?.destroy?.();const challenge=state.challenge.visual==='audio-matching'&&entry.challenge.version===state.challenge.version?{...state.challenge,recordings:entry.challenge.recordings}:state.challenge.visual==='emys-count'&&entry.challenge.version===state.challenge.version?{...state.challenge,image:entry.challenge.image,instructions:entry.challenge.instructions}:state.challenge;ui=window.GiappGameUI.render($('[data-answers]'),challenge,{asset,attempt:state.progress?.attempts||0,onMessage:message,storageKey:gameStorageKey()});}
   function render(){
     $('[data-preview]').hidden=!state.preview;$('[data-practice-notice]').hidden=!practice;
-    if(state.locked){message(`La giornata si aprirà il ${state.opens_on}.`);$('[data-challenge]').hidden=true;$('[data-practice-offer]').hidden=true;return;}
+    if(state.locked){message(`La giornata si aprirà il ${window.GiappCalendar.formatDate(state.opens_on)}.`);ui?.destroy?.();ui=null;['[data-challenge]','[data-practice-offer]','[data-login]','[data-result]','[data-area]','[data-practice-notice]'].forEach(selector=>$(selector).hidden=true);return;}
     message('');const p=state.progress,c=state.challenge;
     $('[data-login]').hidden=practice||!state.login_required;$('[data-practice-offer]').hidden=practice;
     $('[data-challenge]').hidden=!!p||state.login_required;$('[data-result]').hidden=!p;$('[data-area]').hidden=true;
@@ -122,7 +121,7 @@
       $('[data-discover]').textContent=`Scopri l’area: ${state.name}`;
       const reveal=$('[data-result-reveal]');reveal.hidden=!(p.closed&&['mystery','puzzle'].includes(c.type)&&!['paw-detail','emys-count'].includes(c.visual));if(!reveal.hidden){reveal.src=asset(c.image);reveal.alt=c.image_alt||'Illustrazione completa dell’animale della prova';}
       const sourceList=p.closed&&sameContent?(entry.challenge.sources??state.sources):state.sources;
-      const sources=$('[data-game-sources]');sources.replaceChildren();if(p.closed&&sourceList?.length){sources.append(document.createTextNode('Per approfondire:'));sourceList.forEach(source=>{if(!/^https:\/\//.test(source.url))return;const a=document.createElement('a');a.href=source.url;a.textContent=source.title;a.target='_blank';a.rel='noopener';sources.append(a);});}
+      const sources=$('[data-game-sources]');sources.replaceChildren();if(p.closed&&sourceList?.length){sources.append(document.createTextNode('Per approfondire:'));sourceList.forEach(source=>{if(!/^https:\/\//.test(source.url))return;const a=document.createElement('a');a.href=source.url;a.textContent=source.title;a.target='_blank';a.rel='noopener noreferrer';sources.append(a);});}
     }
     if(!practice)window.dispatchEvent(new CustomEvent('giapp:profile',{detail:state.profile}));
   }
@@ -159,10 +158,11 @@
     if(safe){image.alt=entry.area_image_alt||a.image_alt||`Veduta di ${a.name}`;image.loading='eager';image.src=asset(source);if(image.complete&&image.naturalWidth>0)image.onload();}
     else image.removeAttribute('src');
     const target=entry.area_url||a.url||'https://naturadipianura.it/luoghi/'; const link=$('[data-area-link]');link.href=/^https:\/\//.test(target)?target:'https://naturadipianura.it/luoghi/';link.textContent=link.href==='https://naturadipianura.it/luoghi/'?'Consulta l’elenco delle aree GIAPP ↗':'Visita la scheda di '+a.name+' ↗';$('[data-area]').hidden=false;$('[data-discover]').setAttribute('aria-expanded','true');$('[data-area]').focus();});
+  window.addEventListener('giapp:calendar',()=>{if(state?.locked&&catalogue&&window.GiappCalendar.isOpen(day,catalogue.settings))location.reload();});
   (async()=>{try{
     const responses=await Promise.all([fetch(root.dataset.configUrl,{cache:'no-store'}),fetch(root.dataset.daysUrl,{cache:'no-store'})]);if(responses.some(r=>!r.ok))throw new Error('Giornata non disponibile.');[config,catalogue]=await Promise.all(responses.map(r=>r.json()));
     entry=catalogue.days.find(d=>d.day===day);if(!entry||!['demo','supabase'].includes(config.mode))throw new Error('Giornata non disponibile.');state=config.mode==='demo'?localState():await cloud();
     if(!state.locked&&(['puzzle','wordsearch','memory','sequence'].includes(entry.challenge.type)||['river-path','picture-matching','frog-search','beak-matching','wildlife-search','audio-matching','leaf-matching','food-matching','bird-halves','paw-detail','emys-count','bird-sorting','water-story','birdwatch-story','turtle-details'].includes(entry.challenge.visual))&&state.challenge?.version!==entry.challenge.version){$('[data-preview]').hidden=!state.preview;$('[data-practice-offer]').hidden=false;window.dispatchEvent(new CustomEvent('giapp:profile',{detail:state.profile}));message('Il nuovo gioco non è ancora attivo per il salvataggio. Puoi provarlo senza salvare punti.');return;}
     render();
-  }catch(error){message(error.message);if(entry)$('[data-practice-offer]').hidden=false;}})();
+  }catch(error){message(error.message);if(entry&&window.GiappCalendar.isOpen(day,catalogue.settings))$('[data-practice-offer]').hidden=false;}})();
 })();

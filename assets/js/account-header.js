@@ -27,7 +27,8 @@
         return;
       }
       // Sulla pagina account la registrazione gestisce la sessione e invia l'aggiornamento.
-      if (document.querySelector('[data-explorer], [data-day]')) return;
+      const dayPage=document.querySelector('[data-day]');
+      if (document.querySelector('[data-explorer]') || (dayPage && window.GiappCalendar.isOpen(Number(dayPage.dataset.day)))) return;
       if (config.mode !== 'supabase' || !/^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(config.url)) return;
       const key = `giapp-auth:${config.url}`;
       let session = read(key);

@@ -3,6 +3,10 @@ layout: map
 title: Calendario dell'Avvento — Natura di Pianura
 description: Ventiquattro giorni per esplorare le aree della rete GIAPP.
 ---
+{% assign calendar_months = 'gennaio,febbraio,marzo,aprile,maggio,giugno,luglio,agosto,settembre,ottobre,novembre,dicembre' | split: ',' %}
+{% assign calendar_month_index = site.data.advent.month | default: 12 | minus: 1 %}
+{% assign calendar_month = calendar_months[calendar_month_index] %}
+
 {% include explorer-link.html %}
 {% assign poster = site.data.map_poster %}
 <section class="map-calendar map-calendar--poster" data-map-calendar data-day-base="{{ '/giornate/' | relative_url }}" data-marker-style="leaves" data-leaf-base="{{ '/images/' | relative_url }}" aria-label="I 24 giorni sulle aree GIAPP" style="--map-leaf-size: {{ poster.marker_size }}%">
@@ -13,7 +17,7 @@ description: Ventiquattro giorni per esplorare le aree della rete GIAPP.
       <button type="button" data-map-zoom="in" aria-label="Ingrandisci la mappa">+</button>
     </div>
   </div>
-  <p class="map-calendar__hint">Tocca una foglia e scegli Apri la giornata per iniziare la prova. Puoi ingrandire e scorrere la mappa.</p>
+  <p class="map-calendar__hint">Si apre una foglia al giorno. Scegli una giornata disponibile per iniziare la prova. Puoi ingrandire e scorrere la mappa.</p>
   <div class="map-calendar__viewport" data-map-viewport tabindex="0" role="region" aria-label="Mappa scorrevole delle aree GIAPP">
     <div class="map-calendar__stage" data-map-stage>
       <img class="map-calendar__base" src="{{ '/images/mappa-avvento-poster.webp' | relative_url }}" width="{{ poster.width }}" height="{{ poster.height }}" alt="La mappa GIAPP in un’unica illustrazione: rami natalizi e logo in alto, comuni e corsi d’acqua al centro, paesaggio invernale e airone in basso." fetchpriority="high">
@@ -32,14 +36,14 @@ description: Ventiquattro giorni per esplorare le aree della rete GIAPP.
         {% endfor %}
       </svg>
       {% for area in site.data.calendar_map %}
-      <button type="button" class="map-day calendar-leaf--{{ area.leaf }}" data-map-day="{{ area.day }}" data-area-name="{{ area.name | escape }}" style="left: {{ area.left }}%; top: {{ area.top }}%; --map-leaf-angle: {{ area.angle }}deg" aria-label="{{ area.day }} dicembre — {{ area.name | escape }}" aria-pressed="false" title="{{ area.day }} dicembre — {{ area.name | escape }}">
+      <button type="button" class="map-day calendar-leaf--{{ area.leaf }}" data-map-day="{{ area.day }}" data-area-name="{{ area.name | escape }}" style="left: {{ area.left }}%; top: {{ area.top }}%; --map-leaf-angle: {{ area.angle }}deg" aria-label="{{ area.day }} {{ calendar_month }} — {{ area.name | escape }}" aria-pressed="false" title="{{ area.day }} {{ calendar_month }} — {{ area.name | escape }}">
         <img class="map-day__leaf" src="{{ '/images/foglia-' | append: area.leaf | append: '.png' | relative_url }}" width="1024" height="1024" alt="">
         <span class="map-day__number" aria-hidden="true">{{ area.day }}</span>
       </button>
       {% endfor %}
       <div class="map-calendar__selection map-poster__selection" id="map-area-name" data-map-selection aria-live="polite" aria-atomic="true" hidden>
         <span class="map-calendar__selection-day" data-map-selected-day></span>
-        <strong data-map-selected-name></strong><a data-map-day-link href="{{ '/giornate/1.html' | relative_url }}">Apri la giornata →</a>
+        <strong data-map-selected-name></strong><span class="map-calendar__progress" data-map-selected-progress hidden></span><a data-map-day-link href="{{ '/giornate/1.html' | relative_url }}">Apri la giornata →</a>
         <button type="button" class="map-poster__close" data-map-close aria-label="Chiudi il nome dell’area">×</button>
       </div>
       </div>

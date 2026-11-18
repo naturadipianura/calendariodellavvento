@@ -84,17 +84,21 @@
     return {x: rect.left - poster.left + rect.width / 2, y: rect.top - poster.top + rect.height / 2};
   };
 
+  function refreshAccess(){markers.forEach(marker=>{const day=Number(marker.dataset.mapDay),open=window.GiappCalendar.isOpen(day);marker.classList.toggle('is-locked',!open);marker.setAttribute('aria-disabled',String(!open));const label=window.GiappCalendar.dateLabel(day)+' — '+marker.dataset.areaName;marker.setAttribute('aria-label',(open?'':'Si apre il ')+label);marker.title=(open?'':'Si apre il ')+label;});calendar.querySelectorAll('[data-map-find]').forEach(button=>button.setAttribute('aria-disabled',String(!window.GiappCalendar.isOpen(Number(button.dataset.mapFind)))));if(selectedMarker&&!popup.hidden)select(selectedMarker);}
   function select(marker, reveal = false) {
     selectedMarker = marker;
-    const dayLink = calendar.querySelector('[data-map-day-link]'); if(dayLink) dayLink.href = `${calendar.dataset.dayBase}${marker.dataset.mapDay}.html`;
+    const day=Number(marker.dataset.mapDay),open=window.GiappCalendar.isOpen(day);
+    const dayLink=calendar.querySelector('[data-map-day-link]');if(dayLink){dayLink.hidden=!open;if(open)dayLink.href=calendar.dataset.dayBase+day+'.html';else dayLink.removeAttribute('href');}
     popup.hidden = false;
     markers.forEach(item => {
       const selected = item === marker;
       item.classList.toggle('is-selected', selected);
       item.setAttribute('aria-pressed', String(selected));
     });
-    calendar.querySelector('[data-map-selected-day]').textContent = `${marker.dataset.mapDay} dicembre`;
+    calendar.querySelector('[data-map-selected-day]').textContent = (open?'':'Si apre il ')+window.GiappCalendar.dateLabel(day);
     calendar.querySelector('[data-map-selected-name]').textContent = marker.dataset.areaName;
+    const progress=window.GiappCalendarProgress?.get(day),progressLabel=calendar.querySelector('[data-map-selected-progress]');
+    if(progressLabel){progressLabel.hidden=!open||!window.GiappCalendarProgress?.isReady();progressLabel.textContent=progress?(progress.closed?'Già giocata · '+progress.best_score+' punti':'Già iniziata · puoi fare il secondo tentativo'):'Ancora da giocare';}
     if (reveal) {
       if (stage.getBoundingClientRect().width < 700) setWidth(760);
       const center = markerCenter(marker);
@@ -114,6 +118,9 @@
     viewport.scrollLeft = centerX * width - viewport.clientWidth / 2;
     viewport.scrollTop = centerY * stage.getBoundingClientRect().height - viewport.clientHeight / 2;
   }
+  refreshAccess();
+  window.addEventListener('giapp:calendar',refreshAccess);
+  window.addEventListener('giapp:progress',()=>{if(selectedMarker&&!popup.hidden)select(selectedMarker);});
   markers.forEach(marker => marker.addEventListener('click', () => select(marker)));
   calendar.querySelector('[data-map-close]').addEventListener('click', closePopup);
   calendar.addEventListener('click', event => {
