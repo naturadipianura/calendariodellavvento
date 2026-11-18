@@ -1,0 +1,4 @@
+# Apertura sul sito; la stessa scelta va impostata in Supabase (calendar_settings).
+year: 2026
+preview: true
+# I punteggi sono definiti nelle prove di advent_days.json e verificati dal database.

@@ -1,0 +1,111 @@
+---
+layout: default
+paper_class: day-page
+---
+{% assign number = page.day | plus: 0 %}
+{% assign day = site.data.advent_days | where: 'day', number | first %}
+<link rel="stylesheet" href="{{ '/assets/css/day.css' | relative_url }}">
+<link rel="stylesheet" href="{{ '/assets/css/games.css' | relative_url }}">
+<link rel="stylesheet" href="{{ '/assets/css/area-card.css' | relative_url }}">
+<link rel="stylesheet" href="{{ '/assets/css/puzzle.css' | relative_url }}">
+<link rel="stylesheet" href="{{ '/assets/css/wordsearch.css' | relative_url }}">
+<script src="{{ '/assets/js/games-core.js' | relative_url }}" defer></script>
+<link rel="stylesheet" href="{{ '/assets/css/river-path.css' | relative_url }}">
+<script src="{{ '/assets/js/river-path.js' | relative_url }}" defer></script>
+<link rel="stylesheet" href="{{ '/assets/css/picture-match.css' | relative_url }}">
+<script src="{{ '/assets/js/picture-match.js' | relative_url }}" defer></script>
+<link rel="stylesheet" href="{{ '/assets/css/frog-search.css' | relative_url }}">
+<script src="{{ '/assets/js/frog-search.js' | relative_url }}" defer></script>
+<link rel="stylesheet" href="{{ '/assets/css/beak-match.css' | relative_url }}">
+<script src="{{ '/assets/js/beak-match.js' | relative_url }}" defer></script>
+<script src="{{ '/assets/js/games-ui.js' | relative_url }}" defer></script>
+<link rel="stylesheet" href="{{ '/assets/css/wildlife-search.css' | relative_url }}">
+<script src="{{ '/assets/js/wildlife-search.js' | relative_url }}" defer></script>
+<link rel="stylesheet" href="{{ '/assets/css/memory.css' | relative_url }}">
+<script src="{{ '/assets/js/memory.js' | relative_url }}" defer></script>
+<link rel="stylesheet" href="{{ '/assets/css/audio-match.css' | relative_url }}">
+<script src="{{ '/assets/js/audio-match.js' | relative_url }}" defer></script>
+<link rel="stylesheet" href="{{ '/assets/css/leaf-match.css' | relative_url }}">
+<script src="{{ '/assets/js/leaf-match.js' | relative_url }}" defer></script>
+<link rel="stylesheet" href="{{ '/assets/css/food-match.css' | relative_url }}">
+<script src="{{ '/assets/js/food-match.js' | relative_url }}" defer></script>
+<link rel="stylesheet" href="{{ '/assets/css/bird-halves.css' | relative_url }}">
+<script src="{{ '/assets/js/bird-halves.js' | relative_url }}" defer></script>
+<link rel="stylesheet" href="{{ '/assets/css/paw-detail.css' | relative_url }}">
+<script src="{{ '/assets/js/paw-detail.js' | relative_url }}" defer></script>
+<link rel="stylesheet" href="{{ '/assets/css/emys-count.css' | relative_url }}">
+<script src="{{ '/assets/js/emys-count.js' | relative_url }}" defer></script>
+<link rel="stylesheet" href="{{ '/assets/css/bird-sorting.css' | relative_url }}">
+<script src="{{ '/assets/js/bird-sorting.js' | relative_url }}" defer></script>
+<link rel="stylesheet" href="{{ '/assets/css/water-story.css' | relative_url }}">
+<script src="{{ '/assets/js/water-story.js' | relative_url }}" defer></script>
+<link rel="stylesheet" href="{{ '/assets/css/birdwatch-story.css' | relative_url }}">
+<script src="{{ '/assets/js/birdwatch-story.js' | relative_url }}" defer></script>
+<link rel="stylesheet" href="{{ '/assets/css/turtle-details.css' | relative_url }}">
+<script src="{{ '/assets/js/turtle-details.js' | relative_url }}" defer></script>
+<script src="{{ '/assets/js/day.js' | relative_url }}" defer></script>
+<article class="advent-day" data-day="{{ number }}" data-asset-base="{{ '/' | relative_url }}" data-config-url="{{ '/assets/registration-config.json' | relative_url }}" data-days-url="{{ '/assets/data/advent.json' | relative_url }}" data-profile-url="{{ '/registrazione.html' | relative_url }}">
+  <a class="day-back" href="{{ '/' | relative_url }}">← Torna al calendario</a>
+  <p class="calendar-intro__eyebrow">{{ number }} dicembre · Natura di Pianura</p>
+  <h1>La scoperta del giorno {{ number }}</h1>
+  <p class="day-preview" data-preview hidden>Anteprima: tutte le giornate sono aperte per le prove.</p>
+  <ol class="day-steps" aria-label="Il percorso della giornata"><li>La prova</li><li>Risultato e spiegazione</li><li>Scopri l’area</li></ol>
+  <p role="status" data-day-message>Caricamento della giornata…</p>
+  <div class="day-login" data-login hidden><p>Per salvare il risultato e guadagnare punti, entra con il tuo codice o crea il tuo esploratore.</p><a class="day-button" href="{{ '/registrazione.html' | relative_url }}">Vai al mio account</a></div>
+  <div class="day-practice" data-practice-offer hidden><p>Puoi anche provare il gioco senza salvare punti o progressi.</p><button type="button" class="day-button day-button--light" data-practice-start>Prova senza salvare</button></div>
+  <p class="day-preview" data-practice-notice hidden>Prova senza salvataggio: i risultati di questa sessione non cambiano il tuo punteggio.</p>
+  <section class="day-panel" data-challenge hidden aria-labelledby="challenge-title">
+    <p class="day-kicker">La prova</p><h2 id="challenge-title" data-challenge-title></h2>
+    <p class="day-placeholder" data-placeholder hidden>Domanda dimostrativa: la prova specifica dell’area è ancora da preparare.</p>
+    <p data-points-rule></p>
+    <form data-answer-form><fieldset><legend class="day-sr-only">Scegli una risposta</legend><div class="day-answers" data-answers></div></fieldset><button type="submit" class="day-button">Conferma la risposta</button></form>
+  </section>
+  <section class="day-panel day-result" data-result hidden aria-labelledby="result-title" tabindex="-1">
+    <p class="day-kicker">Il risultato</p><h2 id="result-title" data-result-title></h2><p class="day-points" data-result-points></p>
+    <div class="day-explanation" data-explanation></div>
+    <p class="game-result-summary" data-score-summary></p>
+    <img class="game-reveal" data-result-reveal hidden alt="Illustrazione completa dell’animale della prova">
+    <div data-river-solution></div>
+    <div data-picture-match-solution></div>
+    <div data-beak-solution></div>
+    <div data-frog-result></div>
+    <div data-wildlife-result></div>
+    <div data-memory-solution></div>
+    <div data-audio-match-solution></div>
+    <div data-leaf-match-solution></div>
+    <div data-food-match-solution></div>
+    <div data-bird-halves-solution></div>
+    <div data-paw-detail-solution></div>
+    <div data-emys-count-solution></div>
+    <div data-bird-sort-solution></div>
+    <div data-water-story-solution></div>
+    <div data-birdwatch-solution></div>
+    <div data-turtle-details-solution></div>
+    <div class="game-sources" data-game-sources></div>
+    <button type="button" class="day-button day-button--light" data-retry hidden>Tenta il recupero</button>
+    <button type="button" class="day-button day-button--light" data-finish hidden>Concludi e leggi la spiegazione</button>
+    <button type="button" class="day-button" data-discover aria-expanded="false" aria-controls="day-area">Scopri l’area</button>
+  </section>
+  <section id="day-area" class="day-panel day-area" data-area hidden aria-labelledby="area-title" tabindex="-1">
+    <p class="day-kicker">L’area di oggi</p>
+    <h2 id="area-title" data-area-name>{{ day.name }}</h2>
+    <figure class="day-area__photo">
+      <div class="day-area__media">
+        <img data-area-image hidden alt="" loading="lazy" decoding="async">
+        <div class="day-area__placeholder" data-area-placeholder>
+          <svg width="44" height="38" viewBox="0 0 44 38" fill="none" aria-hidden="true"><path d="M5 10h9l3-5h10l3 5h9v23H5V10Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="22" cy="21" r="7" stroke="currentColor" stroke-width="1.6"/><path d="M33 14h2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <strong>Foto dell’area</strong>
+          <span data-area-photo-status>La foto sarà inserita qui.</span>
+        </div>
+      </div>
+      <figcaption data-area-caption hidden></figcaption>
+    </figure>
+    <div class="day-area__text" data-area-description></div>
+    <div class="day-area__actions">
+    <a data-area-link href="https://naturadipianura.it/luoghi/" target="_blank" rel="noopener">Approfondisci sul sito Natura di Pianura ↗</a>
+    <p><a class="day-button" href="{{ '/' | relative_url }}">Torna al calendario</a></p>
+    </div>
+  </section>
+  {{ content }}
+  <noscript>Per svolgere la prova devi attivare JavaScript.</noscript>
+</article>
