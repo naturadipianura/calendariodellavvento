@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ page.title | default: site.title | escape }}</title>
+    {% include consent-head.html %}
     <meta name="description" content="{{ page.description | default: site.description | escape }}">
     <link rel="icon" type="image/png" sizes="270x270" href="{{ '/favicon.png' | relative_url }}">
     <link rel="apple-touch-icon" href="{{ '/favicon.png' | relative_url }}">
@@ -39,5 +40,6 @@
       <img src="{{ '/images/cornice-corta/fascia-' | append: name | append: '.png' | relative_url }}" width="2172" height="360" alt="" data-band="{{ name }}">
       {% endfor %}
     </div>
+    {% include consent-scripts.html %}
   </body>
 </html>

@@ -11,3 +11,29 @@ exclude:
   - Gemfile
   - Gemfile.lock
   - vendor
+
+consent:
+
+  version: "1.0"
+
+  # Inserisci questa riga SOLO se il sito usa Supabase per salvare il codice partita:
+  supabase_storage_key: "codice_personaggio"
+
+  privacy_template:
+    url: "https://raw.githubusercontent.com/glispisotti/glispisotti/main/consent/privacy.html"
+
+  privacy:
+    titolare: "Sustenia S.r.l."
+    email: "info@sustenia.it"
+    pec: "sustenia.srl@pec.it"
+
+  hosting:
+    provider: "GitHub Pages"
+    privacy_url: "https://docs.github.com/it/site-policy/privacy-policies/github-general-privacy-statement"
+
+  services:
+    analytics: false
+    youtube: false
+    googlemaps: false
+    brevo: false
+    supabase: true

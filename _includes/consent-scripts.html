@@ -1,0 +1,20 @@
+<script>
+window.SpisottiConsentConfig = {
+    version: {{ site.consent.version | jsonify }},
+    privacyUrl: {{ "/privacy.html" | relative_url | jsonify }},
+    {% if site.consent.supabase_storage_key %}
+    supabaseStorageKey: {{ site.consent.supabase_storage_key | jsonify }},
+    {% endif %}
+    services: [
+        {% assign first_service = true %}
+        {% for service in site.consent.services %}
+            {% if service[1] == true %}
+                {% unless first_service %},{% endunless %}
+                {{ service[0] | jsonify }}
+                {% assign first_service = false %}
+            {% endif %}
+        {% endfor %}
+    ]
+};
+</script>
+<script src="https://glispisotti.github.io/consent/consent.js"></script>
