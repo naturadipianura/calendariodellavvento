@@ -17,7 +17,7 @@ consent:
   version: "1.0"
 
   # Inserisci questa riga SOLO se il sito usa Supabase per salvare il codice partita:
-  supabase_storage_key: "codice_personaggio"
+  supabase_storage_key: "giapp-personal-code:https://fyefksyqsmwnckrqlcbh.supabase.co"
 
   privacy_template:
     url: "https://raw.githubusercontent.com/glispisotti/glispisotti/main/consent/privacy.html"
