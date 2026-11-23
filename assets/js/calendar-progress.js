@@ -5,6 +5,9 @@
   const root=document.querySelector('[data-map-calendar],[data-leaf-grid]');if(!root)return;
   const calendar=window.GiappCalendar;
   const read=(key,fallback=null)=>JSON.parse(localStorage.getItem(key)||'null')??fallback;
+  function hasSupabaseConsent(){try{const raw=localStorage.getItem('spisottiConsent');return raw?JSON.parse(raw).supabase===true:false;}catch{return false;}}
+  function readSession(key){if(hasSupabaseConsent())return read(key);localStorage.removeItem(key);try{return JSON.parse(sessionStorage.getItem(key)||'null');}catch{return null;}}
+  function saveSession(key,session){if(hasSupabaseConsent()){localStorage.setItem(key,JSON.stringify(session));sessionStorage.removeItem(key);}else{localStorage.removeItem(key);sessionStorage.setItem(key,JSON.stringify(session));}}
   let entries=new Map(),ready=false,request=0;
   const get=day=>calendar.isOpen(day)?entries.get(Number(day))||null:null;
   window.GiappCalendarProgress=Object.freeze({get,isReady:()=>ready});
@@ -24,11 +27,11 @@
       const result=await fetch({{ '/assets/data/advent.json' | relative_url | jsonify }},{cache:'no-store'});if(!result.ok)throw new Error('Giornate non disponibili.');const data=await result.json(),all=read('giapp-demo-games-v2',{}),rows=data.days.flatMap(day=>{const progress=all[`${id}:${data.settings.year}:${day.day}:${day.challenge.version||'prototype-v1'}`];return progress?[{day:day.day,...progress}]:[];});if(token===request)apply(rows);return;
     }
     if(config.mode!=='supabase'||!/^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(config.url)||!config.key||config.key.startsWith('sb_secret_'))throw new Error('Configurazione non disponibile.');
-    const key=`giapp-auth:${config.url}`;let session=read(key);if(!session){if(token===request)apply([],'Entra con il tuo codice per riconoscere le giornate già giocate.');return;}
-    if(session.expires_at*1000<Date.now()+60000){const result=await fetch(`${config.url}/auth/v1/token?grant_type=refresh_token`,{method:'POST',headers:{apikey:config.key,'Content-Type':'application/json'},body:JSON.stringify({refresh_token:session.refresh_token})});if(!result.ok)throw new Error('Accedi di nuovo dal tuo account.');session=await result.json();session.expires_at||=Math.floor(Date.now()/1000)+(session.expires_in||3600);localStorage.setItem(key,JSON.stringify(session));}
+    const key=`giapp-auth:${config.url}`;let session=readSession(key);if(!session){if(token===request)apply([],'Entra con il tuo codice per riconoscere le giornate già giocate.');return;}
+    if(session.expires_at*1000<Date.now()+60000){const result=await fetch(`${config.url}/auth/v1/token?grant_type=refresh_token`,{method:'POST',headers:{apikey:config.key,'Content-Type':'application/json'},body:JSON.stringify({refresh_token:session.refresh_token})});if(!result.ok)throw new Error('Accedi di nuovo dal tuo account.');session=await result.json();session.expires_at||=Math.floor(Date.now()/1000)+(session.expires_in||3600);saveSession(key,session);}
     const result=await fetch(`${config.url}/rest/v1/rpc/calendar_progress`,{method:'POST',headers:{apikey:config.key,Authorization:`Bearer ${session.access_token}`,'Content-Type':'application/json'},body:'{}'});if(!result.ok)throw new Error('Non riesco a leggere le giornate già giocate. Riprova ricaricando la pagina.');const data=await result.json();if(data.error)throw new Error(data.error);if(token===request)apply(data.days||[],data.login_required?'Entra con il tuo codice per riconoscere le giornate già giocate.':'');
   }catch(error){if(token===request)notice.textContent=error.message;}}
   window.addEventListener('giapp:calendar',()=>{paint();refresh();});window.addEventListener('focus',refresh);window.addEventListener('pageshow',event=>{if(event.persisted)refresh();});
-  window.addEventListener('storage',event=>{if(event.key===null||['giapp-demo-current-v1','giapp-demo-profiles-v1','giapp-demo-games-v2'].includes(event.key)||event.key?.startsWith('giapp-auth:')){entries=new Map();ready=false;paint();refresh();}});
+  window.addEventListener('storage',event=>{if(event.key===null||['giapp-demo-current-v1','giapp-demo-profiles-v1','giapp-demo-games-v2','spisottiConsent'].includes(event.key)||event.key?.startsWith('giapp-auth:')){entries=new Map();ready=false;paint();refresh();}});
   notice.textContent='Carico le giornate già giocate…';refresh();
 })();

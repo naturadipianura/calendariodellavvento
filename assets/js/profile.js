@@ -7,11 +7,102 @@
   const animals = Object.fromEntries(registry.catalogue.map(animal => [animal.id, animal.name]));
   let config, profile, session, busy = false;
   const codeKey = () => config.mode === 'demo' ? 'giapp-demo-personal-code-v1' : `giapp-personal-code:${config.url}`;
+  const authKey = () => `giapp-auth:${config.url}`;
+
+  function hasSupabaseConsent() {
+    try {
+      const raw = localStorage.getItem('spisottiConsent');
+      return raw ? JSON.parse(raw).supabase === true : false;
+    } catch {
+      return false;
+    }
+  }
+
   const storage = {
-    get(key, fallback = null) { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; },
+    get(key, fallback = null) {
+      const raw = localStorage.getItem(key);
+      if (!raw) return fallback;
+      try { return JSON.parse(raw); } catch { return raw; }
+    },
     set(key, value) { localStorage.setItem(key, JSON.stringify(value)); },
     remove(key) { localStorage.removeItem(key); }
   };
+
+  function getSession() {
+    if (hasSupabaseConsent()) {
+      return storage.get(authKey());
+    }
+    storage.remove(authKey());
+    try {
+      const raw = sessionStorage.getItem(authKey());
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function saveSession(nextSession) {
+    session = nextSession;
+    if (hasSupabaseConsent()) {
+      storage.set(authKey(), session);
+      sessionStorage.removeItem(authKey());
+    } else {
+      storage.remove(authKey());
+      sessionStorage.setItem(authKey(), JSON.stringify(session));
+    }
+  }
+
+  function clearSession() {
+    session = null;
+    storage.remove(authKey());
+    sessionStorage.removeItem(authKey());
+  }
+
+  function getConsentContainer() {
+    let container = document.getElementById('spisotti-supabase-consent');
+    if (!container) {
+      container = document.createElement('div');
+      container.id = 'spisotti-supabase-consent';
+      const savedPanel = $('[data-saved-code-panel]');
+      if (savedPanel && savedPanel.parentNode) {
+        savedPanel.parentNode.insertBefore(container, savedPanel);
+      } else {
+        $('[data-profile]').prepend(container);
+      }
+    }
+    return container;
+  }
+
+  function handleCodePersistence(code) {
+    if (config.mode === 'demo') {
+      storage.set(codeKey(), code);
+      return;
+    }
+    if (window.SpisottiConsent && typeof window.SpisottiConsent.supabaseSave === 'function') {
+      window.SpisottiConsent.supabaseSave({
+        container: getConsentContainer(),
+        code: code,
+        onSave(saved) {
+          if (session) saveSession(session);
+          if ($('[data-saved-code-panel]')) {
+            $('[data-saved-code-panel]').hidden = false;
+            $('#saved-code').value = saved || code;
+          }
+        },
+        onSkip() {
+          storage.remove(codeKey());
+          if (session) saveSession(session);
+          if ($('[data-saved-code-panel]')) {
+            $('[data-saved-code-panel]').hidden = true;
+            $('#saved-code').value = '';
+          }
+        }
+      });
+    } else if (hasSupabaseConsent()) {
+      storage.set(codeKey(), code);
+    }
+  }
+
   // Il trattino è un simbolo del codice, non un separatore da eliminare.
   const normalize = code => String(code || '').toUpperCase();
   function validCode(code) {
@@ -84,8 +175,7 @@
     const response = await fetch(`${config.url}/auth/v1/${path}`, {method: 'POST', headers: {'apikey': config.key, 'Content-Type': 'application/json'}, body: JSON.stringify(body)});
     const data = await response.json();
     if (!response.ok) throw new Error('Accesso a Supabase non riuscito. Controlla la configurazione e che gli accessi anonimi siano attivi.');
-    session = {...data, expires_at: data.expires_at || Math.floor(Date.now() / 1000) + (data.expires_in || 3600)};
-    storage.set(`giapp-auth:${config.url}`, session);
+    saveSession({...data, expires_at: data.expires_at || Math.floor(Date.now() / 1000) + (data.expires_in || 3600)});
   }
   async function cloud(action, values) {
     if (!session) await authRequest('signup', {});
@@ -106,9 +196,14 @@
       if (values.code !== undefined) { values.code = normalize(values.code); validCode(values.code); }
       if (values.name !== undefined) { values.name = values.name.trim(); validProfile(values.name, values.animal); values.show_in_leaderboard = values.show_in_leaderboard === 'on'; }
       profile = await (config.mode === 'demo' ? demo(action, values) : cloud(action, values));
-      if (['create', 'recover', 'change_code'].includes(action)) storage.set(codeKey(), values.code);
-      if (action === 'logout') storage.remove(codeKey());
+      if (action === 'logout') {
+        storage.remove(codeKey());
+        clearSession();
+      }
       render();
+      if (['create', 'recover', 'change_code'].includes(action)) {
+        handleCodePersistence(values.code);
+      }
       root.querySelectorAll('input[name=code]').forEach(input => { input.value = ''; });
       root.querySelectorAll('input[type=checkbox][required]').forEach(input => { input.checked = false; });
       if (action === 'create') message('Il tuo esploratore è pronto!');
@@ -161,7 +256,7 @@
         $('[data-mode]').textContent = 'Modalità prova: il profilo viene salvato solo in questo browser. Non è ancora collegato a Supabase e non si trasferisce su altri dispositivi.';
       } else {
         if (!/^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(config.url) || !config.key || config.key.startsWith('sb_secret_')) throw new Error('Supabase non è ancora configurato: servono URL del progetto e chiave pubblica.');
-        session = storage.get(`giapp-auth:${config.url}`);
+        session = getSession();
       }
       // Non crea utenti Supabase durante una semplice visita alla pagina.
       profile = config.mode === 'demo' ? await demo('read', {}) : session ? await cloud('read', {}) : null;

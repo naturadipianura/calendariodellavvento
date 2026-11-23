@@ -3,6 +3,33 @@
   const root = document.querySelector('[data-header-account]');
   if (!root) return;
   const read = key => { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : null; };
+  function hasSupabaseConsent() {
+    try {
+      const raw = localStorage.getItem('spisottiConsent');
+      return raw ? JSON.parse(raw).supabase === true : false;
+    } catch {
+      return false;
+    }
+  }
+  function readSession(key) {
+    if (hasSupabaseConsent()) return read(key);
+    localStorage.removeItem(key);
+    try {
+      const raw = sessionStorage.getItem(key);
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  }
+  function saveSession(key, session) {
+    if (hasSupabaseConsent()) {
+      localStorage.setItem(key, JSON.stringify(session));
+      sessionStorage.removeItem(key);
+    } else {
+      localStorage.removeItem(key);
+      sessionStorage.setItem(key, JSON.stringify(session));
+    }
+  }
   let config, request = 0;
   function render(profile) {
     const valid = profile && !!window.GiappAnimals.get(profile.animal);
@@ -31,14 +58,14 @@
       if (document.querySelector('[data-explorer]') || (dayPage && window.GiappCalendar.isOpen(Number(dayPage.dataset.day)))) return;
       if (config.mode !== 'supabase' || !/^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(config.url)) return;
       const key = `giapp-auth:${config.url}`;
-      let session = read(key);
+      let session = readSession(key);
       if (!session) { render(null); return; }
       if (session.expires_at * 1000 < Date.now() + 60000) {
         const response = await fetch(`${config.url}/auth/v1/token?grant_type=refresh_token`, {method:'POST',headers:{apikey:config.key,'Content-Type':'application/json'},body:JSON.stringify({refresh_token:session.refresh_token})});
         if (!response.ok) throw new Error('session');
         session = await response.json();
         session.expires_at ||= Math.floor(Date.now()/1000) + (session.expires_in || 3600);
-        localStorage.setItem(key, JSON.stringify(session));
+        saveSession(key, session);
       }
       const response = await fetch(`${config.url}/rest/v1/rpc/calendar_profile`, {method:'POST',headers:{apikey:config.key,Authorization:`Bearer ${session.access_token}`,'Content-Type':'application/json'},body:JSON.stringify({p_action:'read'})});
       if (!response.ok) throw new Error('profile');
@@ -48,7 +75,7 @@
   }
   window.addEventListener('giapp:profile', event => { ++request; render(event.detail); });
   window.addEventListener('storage', event => {
-    if (event.key === null || ['giapp-demo-current-v1','giapp-demo-profiles-v1'].includes(event.key) || event.key?.startsWith('giapp-auth:')) load();
+    if (event.key === null || ['giapp-demo-current-v1','giapp-demo-profiles-v1','spisottiConsent'].includes(event.key) || event.key?.startsWith('giapp-auth:')) load();
   });
   load();
 })();

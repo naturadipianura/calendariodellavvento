@@ -4,6 +4,9 @@
   const $=s=>root.querySelector(s),day=Number(root.dataset.day),core=window.GiappGames;
   const read=(key,fallback=null)=>JSON.parse(localStorage.getItem(key)||'null')??fallback;
   const save=(key,value)=>localStorage.setItem(key,JSON.stringify(value));
+  function hasSupabaseConsent(){try{const raw=localStorage.getItem('spisottiConsent');return raw?JSON.parse(raw).supabase===true:false;}catch{return false;}}
+  function readSession(key){if(hasSupabaseConsent())return read(key);localStorage.removeItem(key);try{return JSON.parse(sessionStorage.getItem(key)||'null');}catch{return null;}}
+  function saveSession(key,session){if(hasSupabaseConsent()){save(key,session);sessionStorage.removeItem(key);}else{localStorage.removeItem(key);sessionStorage.setItem(key,JSON.stringify(session));}}
   const asset=source=>new URL(source,location.origin+root.dataset.assetBase).href;
   let config,catalogue,entry,state,ui,busy=false,practice=false,practiceProgress=null,practiceScore=0,pending=null;
   const message=text=>$('[data-day-message]').textContent=text;
@@ -21,8 +24,8 @@
   }
   async function cloud(submission=null,finish=false){
     if(!window.GiappCalendar.isOpen(day,catalogue.settings))return{locked:true,preview:false,opens_on:window.GiappCalendar.opensOn(day,catalogue.settings)};
-    const key=`giapp-auth:${config.url}`;let session=read(key);
-    if(session&&session.expires_at*1000<Date.now()+60000){const response=await fetch(`${config.url}/auth/v1/token?grant_type=refresh_token`,{method:'POST',headers:{apikey:config.key,'Content-Type':'application/json'},body:JSON.stringify({refresh_token:session.refresh_token})});if(!response.ok)throw new Error('Accedi di nuovo dal tuo account.');session=await response.json();session.expires_at||=Math.floor(Date.now()/1000)+(session.expires_in||3600);save(key,session);}
+    const key=`giapp-auth:${config.url}`;let session=readSession(key);
+    if(session&&session.expires_at*1000<Date.now()+60000){const response=await fetch(`${config.url}/auth/v1/token?grant_type=refresh_token`,{method:'POST',headers:{apikey:config.key,'Content-Type':'application/json'},body:JSON.stringify({refresh_token:session.refresh_token})});if(!response.ok)throw new Error('Accedi di nuovo dal tuo account.');session=await response.json();session.expires_at||=Math.floor(Date.now()/1000)+(session.expires_in||3600);saveSession(key,session);}
     const body={p_day:day,p_finish:finish};
     if(submission){const fingerprint=JSON.stringify(submission);if(!pending||pending.fingerprint!==fingerprint)pending={fingerprint,id:crypto.randomUUID()};body.p_submission=submission;body.p_request=pending.id;}
     const response=await fetch(`${config.url}/rest/v1/rpc/calendar_game`,{method:'POST',headers:{apikey:config.key,'Content-Type':'application/json',...(session?{Authorization:`Bearer ${session.access_token}`}:{})},body:JSON.stringify(body)});
