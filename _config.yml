@@ -18,12 +18,14 @@ consent:
 
   # Inserisci questa riga SOLO se il sito usa Supabase per salvare il codice partita:
   supabase_storage_key: "giapp-personal-code:https://fyefksyqsmwnckrqlcbh.supabase.co"
+  supabase_stats: true
 
   privacy_template:
     url: "https://raw.githubusercontent.com/glispisotti/glispisotti/main/consent/privacy.html"
 
   privacy:
     titolare: "Sustenia S.r.l."
+    sede: "Via Marzocchi 16, San Giovanni in Persiceto (BO)"
     email: "info@sustenia.it"
     pec: "sustenia.srl@pec.it"
 
