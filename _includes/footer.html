@@ -1,5 +1,76 @@
 <footer class="site-footer" aria-label="Piè di pagina del sito">
-  <p class="site-footer__copyright">Copyright © {{ site.time | date: '%Y' }} Natura di Pianura. Tutti i diritti riservati.</p>
+  <div class="site-footer__copyright">
+    <p>
+      Copyright © {{ site.time | date: '%Y' }} Natura di Pianura.
+      Tutti i diritti riservati.
+    </p>
+
+    <p
+      id="footer-player-count"
+      data-config-url="{{ '/assets/registration-config.json' | relative_url }}"
+      aria-live="polite"
+      style="display:inline-flex; align-items:center; gap:6px;
+            margin:8px 0 0; padding:6px 10px;
+            border:1px solid rgba(48,77,55,.3);
+            border-radius:8px; background:rgba(255,255,255,.18);
+            font-size:12px;"
+    >
+      Numero giocatori <strong>—</strong>
+    </p>
+  </div>
+
+  <script>
+  (() => {
+    const box = document.getElementById('footer-player-count');
+    const value = box.querySelector('strong');
+    let latestRequest = 0;
+
+    async function updatePlayerCount() {
+      const request = ++latestRequest;
+
+      try {
+        const settings = await fetch(box.dataset.configUrl, {
+          cache: 'no-store'
+        });
+        if (!settings.ok) throw new Error();
+
+        const config = await settings.json();
+        if (config.mode !== 'supabase') throw new Error();
+
+        const response = await fetch(
+          `${config.url}/rest/v1/rpc/calendar_player_count`,
+          {
+            method: 'POST',
+            headers: {
+              apikey: config.key,
+              'Content-Type': 'application/json'
+            },
+            body: '{}',
+            cache: 'no-store'
+          }
+        );
+
+        if (!response.ok) throw new Error();
+
+        const count = await response.json();
+        if (!Number.isSafeInteger(count) || count < 0) {
+          throw new Error();
+        }
+
+        if (request !== latestRequest) return;
+        value.textContent = count.toLocaleString('it-IT');
+        box.removeAttribute('title');
+      } catch {
+        if (request !== latestRequest) return;
+        value.textContent = '—';
+        box.title = 'Conteggio momentaneamente non disponibile';
+      }
+    }
+
+    window.addEventListener('giapp:profile', updatePlayerCount);
+    updatePlayerCount();
+  })();
+  </script>
 
   <nav class="site-footer__social" aria-label="Social di Natura di Pianura">
     <!-- Sostituire questo span con un link quando sarà disponibile Instagram. -->
@@ -44,3 +115,5 @@
     <button type="button" id="spisotti-consent-settings">Preferenze cookie</button>
   </div>
 </footer>
+
+
