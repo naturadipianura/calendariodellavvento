@@ -5,16 +5,19 @@
   const $ = selector => root.querySelector(selector);
   const registry = window.GiappAnimals;
   const animals = Object.fromEntries(registry.catalogue.map(animal => [animal.id, animal.name]));
-  let config, profile, session, busy = false;
+  let config, profile, session, currentCode = null, busy = false;
   const codeKey = () => config.mode === 'demo' ? 'giapp-demo-personal-code-v1' : `giapp-personal-code:${config.url}`;
   const authKey = () => `giapp-auth:${config.url}`;
 
   function hasSupabaseConsent() {
+    if (window.SpisottiConsent && typeof window.SpisottiConsent.has === 'function') {
+      return window.SpisottiConsent.has('supabase');
+    }
     try {
       const raw = localStorage.getItem('spisottiConsent');
-      return raw ? JSON.parse(raw).supabase === true : false;
+      return raw ? JSON.parse(raw).supabase !== false : true;
     } catch {
-      return false;
+      return true;
     }
   }
 
@@ -43,6 +46,7 @@
 
   function saveSession(nextSession) {
     session = nextSession;
+    if (!session) return;
     if (hasSupabaseConsent()) {
       storage.set(authKey(), session);
       sessionStorage.removeItem(authKey());
@@ -63,43 +67,43 @@
     if (!container) {
       container = document.createElement('div');
       container.id = 'spisotti-supabase-consent';
+      container.style.marginTop = '0.75rem';
       const savedPanel = $('[data-saved-code-panel]');
       if (savedPanel && savedPanel.parentNode) {
-        savedPanel.parentNode.insertBefore(container, savedPanel);
+        savedPanel.after(container);
       } else {
-        $('[data-profile]').prepend(container);
+        $('[data-profile]').append(container);
       }
     }
     return container;
   }
 
-  function handleCodePersistence(code) {
-    if (config.mode === 'demo') {
-      storage.set(codeKey(), code);
-      return;
-    }
+  function syncSupabaseConsent(displayCode) {
+    if (!config || config.mode === 'demo') return;
     if (window.SpisottiConsent && typeof window.SpisottiConsent.supabaseSave === 'function') {
       window.SpisottiConsent.supabaseSave({
         container: getConsentContainer(),
-        code: code,
+        code: displayCode || '',
         onSave(saved) {
           if (session) saveSession(session);
+          const codeToShow = saved || displayCode || currentCode;
           if ($('[data-saved-code-panel]')) {
-            $('[data-saved-code-panel]').hidden = false;
-            $('#saved-code').value = saved || code;
+            $('[data-saved-code-panel]').hidden = !codeToShow;
+            $('#saved-code').value = codeToShow || '';
           }
         },
         onSkip() {
           storage.remove(codeKey());
           if (session) saveSession(session);
+          const codeToShow = currentCode;
           if ($('[data-saved-code-panel]')) {
-            $('[data-saved-code-panel]').hidden = true;
-            $('#saved-code').value = '';
+            $('[data-saved-code-panel]').hidden = !codeToShow;
+            $('#saved-code').value = codeToShow || '';
           }
         }
       });
-    } else if (hasSupabaseConsent()) {
-      storage.set(codeKey(), code);
+    } else if (hasSupabaseConsent() && displayCode) {
+      storage.set(codeKey(), displayCode);
     }
   }
 
@@ -130,11 +134,14 @@
     $('[data-edit] [name=show_in_leaderboard]').checked = profile.show_in_leaderboard === true;
     $('[data-ranking-status]').textContent = profile.show_in_leaderboard ? 'Hai scelto di comparire nella classifica generale con il tuo nome di fantasia e il tuo animale.' : 'Hai scelto di non comparire nella classifica generale. Puoi giocare lo stesso.';
     const savedCode = storage.get(codeKey());
-    $('[data-saved-code-panel]').hidden = !savedCode;
-    $('#saved-code').value = savedCode || '';
+    if (savedCode && !currentCode) currentCode = savedCode;
+    const displayCode = savedCode || currentCode;
+    $('[data-saved-code-panel]').hidden = !displayCode;
+    $('#saved-code').value = displayCode || '';
     $('#saved-code').type = 'password';
     $('[data-show-code]').textContent = 'Mostra codice';
     $('[data-show-code]').setAttribute('aria-pressed', 'false');
+    syncSupabaseConsent(displayCode);
   }
   async function hash(code) {
     const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(code));
@@ -196,14 +203,16 @@
       if (values.code !== undefined) { values.code = normalize(values.code); validCode(values.code); }
       if (values.name !== undefined) { values.name = values.name.trim(); validProfile(values.name, values.animal); values.show_in_leaderboard = values.show_in_leaderboard === 'on'; }
       profile = await (config.mode === 'demo' ? demo(action, values) : cloud(action, values));
+      if (['create', 'recover', 'change_code'].includes(action)) {
+        currentCode = values.code;
+        if (config.mode === 'demo') storage.set(codeKey(), values.code);
+      }
       if (action === 'logout') {
+        currentCode = null;
         storage.remove(codeKey());
         clearSession();
       }
       render();
-      if (['create', 'recover', 'change_code'].includes(action)) {
-        handleCodePersistence(values.code);
-      }
       root.querySelectorAll('input[name=code]').forEach(input => { input.value = ''; });
       root.querySelectorAll('input[type=checkbox][required]').forEach(input => { input.checked = false; });
       if (action === 'create') message('Il tuo esploratore è pronto!');
@@ -244,6 +253,9 @@
     $('#saved-code').type = show ? 'text' : 'password';
     event.currentTarget.textContent = show ? 'Nascondi codice' : 'Mostra codice';
     event.currentTarget.setAttribute('aria-pressed', String(show));
+  });
+  window.addEventListener('spisotti:consent', () => {
+    if (profile) render();
   });
   (async () => {
     try {

@@ -4,7 +4,7 @@
   const $=s=>root.querySelector(s),day=Number(root.dataset.day),core=window.GiappGames;
   const read=(key,fallback=null)=>JSON.parse(localStorage.getItem(key)||'null')??fallback;
   const save=(key,value)=>localStorage.setItem(key,JSON.stringify(value));
-  function hasSupabaseConsent(){try{const raw=localStorage.getItem('spisottiConsent');return raw?JSON.parse(raw).supabase===true:false;}catch{return false;}}
+  function hasSupabaseConsent(){if(window.SpisottiConsent&&typeof window.SpisottiConsent.has==='function')return window.SpisottiConsent.has('supabase');try{const raw=localStorage.getItem('spisottiConsent');return raw?JSON.parse(raw).supabase!==false:true;}catch{return true;}}
   function readSession(key){if(hasSupabaseConsent())return read(key);localStorage.removeItem(key);try{return JSON.parse(sessionStorage.getItem(key)||'null');}catch{return null;}}
   function saveSession(key,session){if(hasSupabaseConsent()){save(key,session);sessionStorage.removeItem(key);}else{localStorage.removeItem(key);sessionStorage.setItem(key,JSON.stringify(session));}}
   const asset=source=>new URL(source,location.origin+root.dataset.assetBase).href;

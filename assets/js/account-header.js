@@ -3,14 +3,7 @@
   const root = document.querySelector('[data-header-account]');
   if (!root) return;
   const read = key => { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : null; };
-  function hasSupabaseConsent() {
-    try {
-      const raw = localStorage.getItem('spisottiConsent');
-      return raw ? JSON.parse(raw).supabase === true : false;
-    } catch {
-      return false;
-    }
-  }
+  function hasSupabaseConsent(){if(window.SpisottiConsent&&typeof window.SpisottiConsent.has==='function')return window.SpisottiConsent.has('supabase');try{const raw=localStorage.getItem('spisottiConsent');return raw?JSON.parse(raw).supabase!==false:true;}catch{return true;}}
   function readSession(key) {
     if (hasSupabaseConsent()) return read(key);
     localStorage.removeItem(key);

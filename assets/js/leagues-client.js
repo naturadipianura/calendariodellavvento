@@ -6,7 +6,7 @@
   const getPlace=id=>places.find(place=>place.id===id)||places[1];
   const read=(key,fallback=null)=>JSON.parse(localStorage.getItem(key)||'null')??fallback;
   const write=(key,value)=>localStorage.setItem(key,JSON.stringify(value));
-  function hasSupabaseConsent(){try{const raw=localStorage.getItem('spisottiConsent');return raw?JSON.parse(raw).supabase===true:false;}catch{return false;}}
+  function hasSupabaseConsent(){if(window.SpisottiConsent&&typeof window.SpisottiConsent.has==='function')return window.SpisottiConsent.has('supabase');try{const raw=localStorage.getItem('spisottiConsent');return raw?JSON.parse(raw).supabase!==false:true;}catch{return true;}}
   function readSession(key){if(hasSupabaseConsent())return read(key);localStorage.removeItem(key);try{return JSON.parse(sessionStorage.getItem(key)||'null');}catch{return null;}}
   function saveSession(key,session){if(hasSupabaseConsent()){write(key,session);sessionStorage.removeItem(key);}else{localStorage.removeItem(key);sessionStorage.setItem(key,JSON.stringify(session));}}
   const validId=id=>typeof id==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
